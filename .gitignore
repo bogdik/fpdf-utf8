@@ -1,12 +1,4 @@
-nbproject/
-build/
-nbbuild/
-dist/
-nbdist/
-nbactions.xml
-nb-configuration.xml
-vendor
+/vendor/
+/cache/
 composer.lock
 tests/test_data/output.pdf
-
-*.cw127.php
