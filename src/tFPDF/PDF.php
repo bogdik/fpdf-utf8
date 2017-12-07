@@ -2,6 +2,8 @@
 
 namespace tFPDF;
 
+use RuntimeException;
+
 /**
  * Class PDF
  * @package tFPDF
@@ -495,7 +497,7 @@ class PDF
                 $this->flt_scale_factor = 72;
                 break;
             default:
-                throw new \RuntimeException('Invalid unit specified: ' . $str_units);
+                throw new RuntimeException('Invalid unit specified: ' . $str_units);
         }
 
         $str_size = $this->getPageSize($str_size);
@@ -714,7 +716,7 @@ class PDF
     private function Error($str_message)
     {
         // Fatal error
-        throw new \RuntimeException('FPDF Error: ' . $str_message);
+        throw new RuntimeException('FPDF Error: ' . $str_message);
     }
 
     /**
@@ -1884,7 +1886,7 @@ class PDF
     {
         if (PHP_SAPI !== 'cli') {
             if (headers_sent($str_file, $int_line)) {
-                throw new \RuntimeException("Some data has already been output, can't send PDF file (output started at $str_file:$int_line)");
+                throw new RuntimeException("Some data has already been output, can't send PDF file (output started at $str_file:$int_line)");
             }
         }
 
@@ -1894,7 +1896,7 @@ class PDF
                 // It contains only a UTF-8 BOM and/or whitespace, let's clean it
                 ob_clean();
             } else {
-                throw new \RuntimeException('Some data has already been output, can\'t send PDF file');
+                throw new RuntimeException('Some data has already been output, can\'t send PDF file');
             }
         }
     }
