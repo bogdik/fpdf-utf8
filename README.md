@@ -1,16 +1,31 @@
-Unofficial repository for the tFPDF library
-==
-
-This is an unofficial repository for the [tFPDF-library](http://fpdf.org/fr/script/script92.php). The purpose is to be able to build automatic packages using [composer](http://packagist.org).
-
-What is tFPDF?
---
-
-tFPDF is a version of FPDF, which supports UTF-8 and font-subsetting.
+#FPDF-UTF8 library
 
 
-What is FPDF?
---
+This is an unofficial repository for the [FPDF-library](http://fpdf.org/fr/script/script92.php).  
+The purpose is to be able to build automatic packages using [composer](http://packagist.org).
+
+##Install
+
+You can install this library by editing (or creating) your `composer.json`:
+
+	{
+		"require": {
+			"faimmedia/fpdf-utf8": "*"
+		}
+	}
+
+And run `composer update` or `composer install`.
+
+Or you can simply run the `composer` command, `composer require faimmedia/fpdf-utf8`.
+
+##About
+
+###What is FPDF-UTF8?
+
+FPDF-UTF8 is a version of FPDF, which supports UTF-8 and font-subsetting.  
+This is a updated version (fork) of [tFPDF](https://github.com/DocnetUK/tFPDF).
+
+###What is FPDF?
 
 FPDF is a PHP class which allows to generate PDF files with pure PHP, that is to say without using the PDFlib library. F from FPDF stands for Free: you may use it for any kind of usage and modify it to suit your needs.
 
@@ -32,16 +47,15 @@ The tutorials will give you a quick start. The complete online documentation is 
 
 A script section is available and provides some useful extensions (such as bookmarks, rotations, tables, barcodes...).
 
-What languages can I use?
---
+###What languages can I use?
 
 The class can produce documents in many languages other than the Western European ones: Central European, Cyrillic, Greek, Baltic and Thai, provided you own TrueType or Type1 fonts with the desired character set. Chinese, Japanese and Korean are supported too. UTF-8 support is also available.
 
-What about performance?
---
+###What about performance?
+
 
 Of course, the generation speed of the document is less than with PDFlib. However, the performance penalty keeps very reasonable and suits in most cases, unless your documents are particularly complex or heavy.
 
-## Source attribution ##
+## Source attribution
 
 The Code 128 and Code 39 barcode library code was taken directly from the FPDF website, where source attribution is vague at best, but mostly non-existent. If you need source attribution applying for your code included here, please raise an issue.
