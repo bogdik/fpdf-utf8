@@ -1005,94 +1005,51 @@ class PDF
             $str_style = 'BI';
         }
         if ($str_file === '') {
-            if ($bol_unicode) {
-                $str_file = str_replace(' ', '', $str_family) . strtolower($str_style) . '.ttf';
-            } else {
-                $str_file = str_replace(' ', '', $str_family) . strtolower($str_style) . '.php';
-            }
+            $str_file = str_replace(' ', '', $str_family) . strtolower($str_style);
+            $str_file .= ($bol_unicode) ? '.ttf' : '.php';
         }
-        $fontkey = $str_family . $str_style;
-        if (isset($this->arr_fonts[$fontkey])) {
+
+        $fontKey = $str_family . $str_style;
+        if (isset($this->arr_fonts[$fontKey])) {
             return;
         }
+
         if ($bol_unicode) {
             if (defined("_SYSTEM_TTFONTS") && file_exists(_SYSTEM_TTFONTS . $str_file)) {
                 $str_ttf_filename = _SYSTEM_TTFONTS . $str_file;
             } else {
                 $str_ttf_filename = $this->getFontPath() . $this->str_unifont_path . $str_file;
             }
-            $str_unicode_file = $this->str_unifont_path . strtolower(substr($str_file, 0, (strpos($str_file, '.'))));
-            $str_unicode_filename = $this->getFontPath() . $str_unicode_file;
-            $name = '';
-            $originalsize = 0;
-            $arr_ttf_stat = stat($str_ttf_filename);
-            $flt_underline_pos = 0.00;
-            $flt_underline_thickness = 0.00;
-            $arr_descriptors = [];
-            if (file_exists($str_unicode_filename . $this->str_font_metrics_file_suffix)) {
-                include($str_unicode_filename . $this->str_font_metrics_file_suffix);
-            }
 
-            if (!isset($type) || !isset($name) || $originalsize != $arr_ttf_stat['size']) {
+            $arr_character_widths = $this->getFontMetricFiles($str_ttf_filename, $fontKey);
+            extract($arr_character_widths, EXTR_SKIP);
 
-                $obj_ttf = new TTFontFile();
-                $obj_ttf->getMetrics($str_ttf_filename);
-                $arr_character_widths = $obj_ttf->getCharWidths();
-                $name = preg_replace('/[ ()]/', '', $obj_ttf->getFullName());
-                $arr_descriptors = array(
-                    'Ascent' => round($obj_ttf->getAscent()),
-                    'Descent' => round($obj_ttf->getDescent()),
-                    'CapHeight' => round($obj_ttf->getCapHeight()),
-                    'Flags' => $obj_ttf->getFlags(),
-                    'FontBBox' => '[' . round($obj_ttf->getBbox()[0]) . ' ' . round($obj_ttf->getBbox()[1]) . ' ' . round($obj_ttf->getBbox()[2]) . ' ' . round($obj_ttf->getBbox()[3]) . ']',
-                    'ItalicAngle' => $obj_ttf->getItalicAngle(),
-                    'StemV' => round($obj_ttf->getStemV()),
-                    'MissingWidth' => round($obj_ttf->getDefaultWidth())
-                );
-                $flt_underline_pos = round($obj_ttf->getUnderlinePosition());
-                $flt_underline_thickness = round($obj_ttf->getUnderlineThickness());
-                $originalsize = $arr_ttf_stat['size'] + 0;
-                $type = self::FONT_TRUETYPE;
-                // Generate metrics .php file
-                $str_metrics_data = '<?php' . "\n";
-                $str_metrics_data .= '$name=\'' . $name . "';\n";
-                $str_metrics_data .= '$type=\'' . $type . "';\n";
-                $str_metrics_data .= '$arr_descriptors=' . var_export($arr_descriptors, true) . ";\n";
-                $str_metrics_data .= '$flt_underline_pos=' . $flt_underline_pos . ";\n";
-                $str_metrics_data .= '$flt_underline_thickness=' . $flt_underline_thickness . ";\n";
-                $str_metrics_data .= '$ttffile=\'' . str_replace(__DIR__ . "/", "", $str_ttf_filename) . "';\n";
-                $str_metrics_data .= '$originalsize=' . $originalsize . ";\n";
-                $str_metrics_data .= '$fontkey=\'' . $fontkey . "';\n";
-                if (is_writable(dirname($this->getFontPath() . $this->str_unifont_path))) {
-                    $this->writeFontFile($str_unicode_filename .  $this->str_font_metrics_file_suffix, $str_metrics_data);
-                    $this->writeFontFile($str_unicode_filename . $this->str_character_widths_file_suffix, $arr_character_widths);
-                    $this->clearFontFile($str_unicode_filename . $this->str_127_character_widths_file_suffix);
-                }
-                unset($obj_ttf);
-            } else {
-                $arr_character_widths = $this->readFontFile($str_unicode_filename . $this->str_character_widths_file_suffix);
-            }
             $int_font_count = count($this->arr_fonts) + 1;
-            if (!empty($this->str_alias_number_pages)) {
-                $arr_numbers = range(0, 57);
-            } else {
-                $arr_numbers = range(0, 32);
-            }
-            $this->arr_fonts[$fontkey] = array(
-                'i' => $int_font_count,
-                'type' => $type,
-                'name' => $name,
-                'desc' => $arr_descriptors,
-                'up' => $flt_underline_pos,
-                'ut' => $flt_underline_thickness,
-                'cw' => $arr_character_widths,
+            $arr_numbers = range(0, (!empty($this->str_alias_number_pages)) ? 57 : 32);
+
+            $this->arr_fonts[$fontKey] = [
+                'i'           => $int_font_count,
+                'type'        => $type,
+                'name'        => $name,
+                'desc'        => $arr_descriptors,
+                'up'          => $flt_underline_pos,
+                'ut'          => $flt_underline_thickness,
+                'cw'          => $arr_character_widths,
+                'ttffile'     => $str_ttf_filename,
+                'fontkey'     => $fontKey,
+                'subset'      => $arr_numbers,
+                'unifilename' => $str_unicode_filename,
+            ];
+
+            $this->arr_font_files[$fontKey] = [
+                'length1' => $originalsize,
+                'type'    => self::FONT_TRUETYPE,
                 'ttffile' => $str_ttf_filename,
-                'fontkey' => $fontkey,
-                'subset' => $arr_numbers,
-                'unifilename' => $str_unicode_filename
-            );
-            $this->arr_font_files[$fontkey] = array('length1' => $originalsize, 'type' => self::FONT_TRUETYPE, 'ttffile' => $str_ttf_filename);
-            $this->arr_font_files[$str_file] = array('type' => self::FONT_TRUETYPE);
+            ];
+            $this->arr_font_files[$str_file] = [
+                'type' => self::FONT_TRUETYPE
+            ];
+
             unset($arr_character_widths);
         } else {
             $arr_info = $this->LoadFont($str_file);
@@ -1117,8 +1074,99 @@ class PDF
                     );
                 }
             }
-            $this->arr_fonts[$fontkey] = $arr_info;
+            $this->arr_fonts[$fontKey] = $arr_info;
         }
+    }
+
+    /**
+     * @param $fileName
+     */
+    public function getFontMetricFiles($fontFile, $fontKey) {
+
+        $ext = strrchr($fontFile, '.');
+        $baseName = basename($fontFile, $ext);
+        $basePath = $this->getFontPath() . $baseName;
+
+        //$str_unicode_filename = $this->getFontPath() . $str_unicode_file;
+
+        $metricFile = __DIR__.'/'.$this->str_cache_path . $baseName . self::FILE_FONT_METRICS;
+        $charWidthFile = __DIR__.'/'.$this->str_cache_path . $baseName . self::FILE_CHARACTER_WIDTH_DAT;
+
+        $oFileSize = filesize($fontFile);
+
+        if(file_exists($metricFile) && file_exists($charWidthFile)) {
+            $fopen = fopen($metricFile, 'r');
+            $fread = fread($fopen, filesize($metricFile));
+            fclose($fopen);
+
+            $json = json_decode($fread, true);
+
+            if(json_last_error() !== JSON_ERROR_NONE) {
+                throw new RuntimeException('Could not decode file '.basename($metricFile));
+            }
+
+            if($oFileSize == $json['originalsize']) {
+                return $json;
+            }
+        }
+
+        $ttf = new TTFontFile();
+        $ttf->getMetrics($fontFile);
+        $arr_character_widths = $ttf->getCharWidths();
+        $name = preg_replace('/[ ()]/', '', $ttf->getFullName());
+
+        $arr_descriptors = [
+            'Ascent'       => round($ttf->getAscent()),
+            'Descent'      => round($ttf->getDescent()),
+            'CapHeight'    => round($ttf->getCapHeight()),
+            'Flags'        => $ttf->getFlags(),
+            'FontBBox'     => '[' . round($ttf->getBbox()[0]) . ' ' . round($ttf->getBbox()[1]) . ' ' . round($ttf->getBbox()[2]) . ' ' . round($ttf->getBbox()[3]) . ']',
+            'ItalicAngle'  => $ttf->getItalicAngle(),
+            'StemV'        => round($ttf->getStemV()),
+            'MissingWidth' => round($ttf->getDefaultWidth()),
+        ];
+        $flt_underline_pos = round($ttf->getUnderlinePosition());
+        $flt_underline_thickness = round($ttf->getUnderlineThickness());
+        $type = self::FONT_TRUETYPE;
+
+        // Generate metrics .php file
+        $strMetricsData = [
+            'name'                    => $name,
+            'type'                    => $type,
+            'arr_descriptors'         => $arr_descriptors,
+            'flt_underline_pos'       => $flt_underline_pos,
+            'flt_underline_thickness' => $flt_underline_thickness,
+            'ttffile'                 => str_replace(__DIR__ . "/", "", $metricFile),
+            'originalsize'            => $oFileSize,
+            'fontkey'                 => $fontKey,
+        ];
+
+        if($this->use_cache) {
+            $cachePath = $this->getCachePath();
+
+        // write metrics file
+            $json = json_encode($strMetricsData);
+
+            $fopen = fopen($metricFile, 'w');
+            fwrite($fopen, $json);
+            fclose($fopen);
+
+        // write char width file
+            $fopen = fopen($charWidthFile, 'w');
+            fwrite($fopen, $arr_character_widths);
+            fclose($fopen);
+
+        // unlink char width 127 file
+
+            $charWidth127file = $cachePath.$basePath.self::FILE_CHARACTER_WIDTH_127;
+            if(file_exists($charWidth127file)) {
+                @unlink($cacheWidth127file);
+            }
+        }
+
+        unset($ttf);
+
+        return $strMetricsData;
     }
 
     /**
