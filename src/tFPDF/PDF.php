@@ -2686,18 +2686,16 @@ class PDF
             if ($cid == 128 && (!file_exists($str_font_file))) {
                 if (is_writable(dirname($this->getFontPath() . $this->str_unifont_path))) {
                     $fh = fopen($str_font_file, "wb");
-                    $cw127 = '<?php' . "\n";
-                    $cw127 .= '$rangeid=' . $rangeid . ";\n";
-                    $cw127 .= '$prevcid=' . $prevcid . ";\n";
-                    $cw127 .= '$prevwidth=' . $prevwidth . ";\n";
-                    if ($interval) {
-                        $cw127 .= '$interval=true' . ";\n";
-                    } else {
-                        $cw127 .= '$interval=false' . ";\n";
-                    }
-                    $cw127 .= '$range=' . var_export($range, true) . ";\n";
-                    $cw127 .= "?>";
-                    fwrite($fh, $cw127, strlen($cw127));
+
+                    $cw127 = [
+                        'rangeid'   => $rangeid,
+                        'prevcid'   => $prevcid,
+                        'prevwidth' => $prevwidth,
+                        'interval'  => (bool)$interval,
+                        'range'     => var_export($range, true),
+                    ];
+
+                    fwrite($fh, json_encode($cw127));
                     fclose($fh);
                 }
             }
