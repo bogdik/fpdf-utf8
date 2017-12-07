@@ -19,6 +19,10 @@ class PDF
 
     const FONT_TRUETYPE = 'TTF';
 
+    const FILE_FONT_METRICS = '-font-metrics.json';
+    const FILE_CHARACTER_WIDTH_DAT = '-character-widths.dat';
+    const FILE_CHARACTER_WIDTH_127 = '-character-width-127.json';
+
     /**
      * @var bool
      */
@@ -443,19 +447,12 @@ class PDF
     protected $str_unifont_path = 'unifont/';
 
     /**
-     * @var string
      */
-    protected $str_font_metrics_file_suffix = '-font-metrics.php';
 
     /**
      * @var string
      */
-    protected $str_character_widths_file_suffix = '-character-widths.dat';
 
-    /**
-     * @var string
-     */
-    protected $str_127_character_widths_file_suffix = '-character-width-127.php';
 
     /**
      * PDF constructor.
