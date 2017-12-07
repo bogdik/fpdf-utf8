@@ -449,11 +449,18 @@ class PDF
     protected $str_unifont_path = 'unifont/';
 
     /**
+     * Boolean to use font metric cache files or not
+     *
+     * @var bool
      */
+    protected $use_cache = true;
 
     /**
+     * The font metric cache directory
+     *
      * @var string
      */
+    protected $str_cache_path = '../../cache/font/';
 
 
     /**
@@ -465,6 +472,7 @@ class PDF
     public function __construct($str_orientation = 'P', $str_units = 'mm', $str_size = 'A4')
     {
         $this->str_font_path = __DIR__ . '/../font/';
+        $this->str_font_write_path = $this->str_font_path;
 
         $this->configureFontWritePath($this->str_unifont_path);
 
@@ -1900,7 +1908,7 @@ class PDF
      */
     protected function getFontPath()
     {
-        return $this->str_font_path;
+        return realpath($this->str_font_path).'/';
     }
 
     /**
@@ -2698,9 +2706,10 @@ class PDF
         }
     }
 
-    function PutTTFontWidths(&$font, $maxUni)
+    protected function PutTTFontWidths($font, $maxUni)
     {
-        $str_font_file = $font['unifilename'] . $this->str_127_character_widths_file_suffix;
+        $str_font_file = $font['unifilename'] . self::FILE_CHARACTER_WIDTH_127;
+
         if (file_exists($str_font_file)) {
             include($str_font_file);
             $startcid = 128;
@@ -3091,38 +3100,6 @@ class PDF
     }
 
     /**
-     * @param $str_name
-     * @param $str_data
-     * @return int
-     */
-    public function writeFontFile($str_name, $str_data)
-    {
-        return file_put_contents($str_name, $str_data);
-    }
-
-    /**
-     * @param $str_name
-     * @return string
-     */
-    public function readFontFile($str_name)
-    {
-        return file_get_contents($str_name);
-    }
-
-    /**
-     * @param $str_name
-     * @return bool
-     */
-    public function clearFontFile($str_name)
-    {
-        if (file_exists($str_name)) {
-            unlink($str_name);
-        }
-
-        return true;
-    }
-
-    /**
      * @param $str_path
      */
     public function configureFontWritePath($str_path)
@@ -3132,6 +3109,29 @@ class PDF
                 $this->Error("Unable to create unifont directory in path {$this->str_font_write_path}");
             }
         }
+    }
+
+    /**
+     * @param $bool
+     */
+
+    public function setCache($bool = true)
+    {
+        $this->use_cache = $bool;
+    }
+
+    public function getCachePath() {
+        $cachePath = __DIR__.'/'.$this->str_cache_path;
+
+        if(!file_exists($cachePath)) {
+            @mkdir($cachePath, 0775, true);
+        }
+
+        if(!file_exists($cachePath) || !is_dir($cachePath) || !is_writable($cachePath)) {
+            throw new RuntimeException('Could not write to cache folder: '.$cachePath);
+        }
+
+        return realpath($cachePath).'/';
     }
 
 }
