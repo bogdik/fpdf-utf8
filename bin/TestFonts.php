@@ -27,16 +27,32 @@ $fpdf->setDisplayMode('default', 'default');
 $fpdf->AddPage();
 
 $fontFolder = ROOT_PATH.'src/font/unifont/';
+
+$fpdf->setFontPath($fontFolder);
+
 $fontFiles = glob($fontFolder.'*.ttf');
-
 foreach($fontFiles as $fontFile) {
-	$baseName = basename($fontFile, '.ttf');
 
-	$fpdf->AddFont($baseName, '', basename($fontFile), true);
-	$fpdf->SetFont($baseName);
+	$baseName = pathinfo($fontFile, PATHINFO_BASENAME);
+	$fileName = pathinfo($fontFile, PATHINFO_FILENAME);
+	$fontProperties = explode('-', $fileName);
+
+	$fontFamily = array_shift($fontProperties);
+
+	$fontStyles = [];
+	if(in_array('Bold', $fontProperties)) {
+		$fontStyles[] = 'B';
+	}
+
+	if(in_array('Italic', $fontProperties) || in_array('Oblique', $fontProperties)) {
+		$fontStyles[] = 'I';
+	}
+
+	$fpdf->AddFont($fontFamily, join($fontStyles), $baseName);
+	$fpdf->SetFont($fontFamily, join($fontStyles));
 
 	$fpdf->SetTextColor(0,0,0);
-	$fpdf->Cell(30, 5, $baseName, 0, 1);
+	$fpdf->Cell(30, 5, $fileName, 0, 1);
 
 	$fpdf->setX($fpdf->getX() + 10);
 	$fpdf->Cell(100, 5, 'Nice to meet you', 0, 1);
