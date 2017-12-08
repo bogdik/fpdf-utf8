@@ -504,18 +504,24 @@ class PDF
         $this->str_current_orientation = $this->str_default_orientation;
         $this->flt_width_points = $this->flt_current_width * $this->flt_scale_factor;
         $this->flt_height_points = $this->flt_current_height * $this->flt_scale_factor;
-        // Page margins (1 cm)
+
+    // Page margins (1 cm)
         $flt_margin = 28.35 / $this->flt_scale_factor;
         $this->setMargins($flt_margin, $flt_margin);
-        // Interior cell margin (1 mm)
+
+    // Interior cell margin (1 mm)
         $this->int_cell_margin = $flt_margin / 10;
-        // Line width (0.2 mm)
+
+    // Line width (0.2 mm)
         $this->flt_line_width = .567 / $this->flt_scale_factor;
-        // Automatic page break
+
+    // Automatic page break
         $this->SetAutoPageBreak(true, 2 * $flt_margin);
-        // Default display mode
+
+    // Default display mode
         $this->SetDisplayMode('default');
-        // Enable compression
+
+    // Enable compression
         $this->SetCompression(true);
 
     }
