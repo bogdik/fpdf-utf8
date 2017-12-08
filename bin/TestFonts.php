@@ -23,6 +23,7 @@ if(isset($_GET['clear'])) {
 	$isCache = false;
 }
 
+$fpdf->setDisplayMode('default', 'default');
 $fpdf->AddPage();
 
 $fontFolder = ROOT_PATH.'src/font/unifont/';
