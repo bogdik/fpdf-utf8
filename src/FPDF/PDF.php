@@ -448,7 +448,7 @@ class PDF {
      */
     public function __construct($str_orientation = 'P', $str_units = 'mm', $str_size = 'A4') {
 
-        $this->setFontPath(__DIR__ . '/../font/unicode/');
+        $this->setFontPath(__DIR__ . '/../font/unifont/');
 
         // Scale factor
         switch ($str_units) {
@@ -984,7 +984,12 @@ class PDF {
         }
         if ($fontFile == '') {
             $fontFile = str_replace(' ', '', $fontFamily) . strtolower($fontStyle);
-            $fontFile .= '.ttf';
+
+            if(file_exists($fontFile.'.ttf')) {
+                $fontFile .= '.ttf';
+            } else {
+                $fontFile .= '.php';
+            }
         }
 
         $fontExtension = pathinfo($fontFile, PATHINFO_EXTENSION);
@@ -1893,7 +1898,7 @@ class PDF {
 
     public function setFontPath(string $fontPath): string {
         if(!file_exists($fontPath) || !is_dir($fontPath)) {
-            throw new FPDFException('Font path does not exist', FPDFException::INVALID_FONT_PATH);
+            throw new FPDFException('Font path does not exist `'.$fontPath.'`', FPDFException::INVALID_FONT_PATH);
         }
 
         $this->str_font_path = realpath($fontPath).'/';
