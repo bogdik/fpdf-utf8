@@ -996,28 +996,21 @@ class PDF
                 $str_ttf_filename = $this->getFontPath() . $this->str_unifont_path . $str_file;
             }
 
-            $arr_character_widths = $this->getFontMetricFiles($str_ttf_filename, $fontKey);
-            extract($arr_character_widths, EXTR_SKIP);
+            $fontMetrics = $this->getFontMetricFiles($str_ttf_filename, $fontKey);
+            //extract($fontMetrics, EXTR_SKIP);
 
             $int_font_count = count($this->arr_fonts) + 1;
             $arr_numbers = range(0, (!empty($this->str_alias_number_pages)) ? 57 : 32);
 
-            $this->arr_fonts[$fontKey] = [
+            $this->arr_fonts[$fontKey] = array_merge($fontMetrics, [
                 'i'           => $int_font_count,
-                'type'        => $type,
-                'name'        => $name,
-                'desc'        => $arr_descriptors,
-                'up'          => $flt_underline_pos,
-                'ut'          => $flt_underline_thickness,
-                'cw'          => $arr_character_widths,
                 'ttffile'     => $str_ttf_filename,
-                'fontkey'     => $fontKey,
                 'subset'      => $arr_numbers,
-                'unifilename' => $str_unicode_filename,
-            ];
+                'filename'    => pathinfo($str_file, PATHINFO_FILENAME),
+            ]);
 
             $this->arr_font_files[$fontKey] = [
-                'length1' => $originalsize,
+                'length1' => $fontMetrics['originalsize'],
                 'type'    => self::FONT_TRUETYPE,
                 'ttffile' => $str_ttf_filename,
             ];
@@ -1025,7 +1018,7 @@ class PDF
                 'type' => self::FONT_TRUETYPE
             ];
 
-            unset($arr_character_widths);
+            unset($fontMetrics);
         } else {
             $arr_info = $this->LoadFont($str_file);
             $arr_info['i'] = count($this->arr_fonts) + 1;
@@ -1060,64 +1053,68 @@ class PDF
 
         $ext = strrchr($fontFile, '.');
         $baseName = basename($fontFile, $ext);
-        $basePath = $this->getFontPath() . $baseName;
 
-        //$str_unicode_filename = $this->getFontPath() . $str_unicode_file;
+        $cachePath = $this->getCachePath();
 
-        $metricFile = __DIR__.'/'.$this->str_cache_path . $baseName . self::FILE_FONT_METRICS;
-        $charWidthFile = __DIR__.'/'.$this->str_cache_path . $baseName . self::FILE_CHARACTER_WIDTH_DAT;
+        $metricFile = $cachePath . self::FILE_FONT_METRICS . $baseName . '.json';
+        $charWidthFile = $cachePath . self::FILE_CHARACTER_WIDTH . $baseName . '.dat';
 
         $oFileSize = filesize($fontFile);
 
-        if(file_exists($metricFile) && file_exists($charWidthFile)) {
+        if($cachePath !== null && file_exists($metricFile) && file_exists($charWidthFile)) {
             $fopen = fopen($metricFile, 'r');
-            $fread = fread($fopen, filesize($metricFile));
+            $fread = fread($fopen, filesize($metricFile) + 1);
             fclose($fopen);
 
             $json = json_decode($fread, true);
 
-            if(json_last_error() !== JSON_ERROR_NONE) {
-                throw new RuntimeException('Could not decode file '.basename($metricFile));
-            }
+            if(json_last_error() === JSON_ERROR_NONE) {
+                $fopen = fopen($charWidthFile, 'r');
+                $fread = fread($fopen, filesize($charWidthFile) + 1);
+                fclose($fopen);
 
-            if($oFileSize == $json['originalsize']) {
-                return $json;
+                $json['cw'] = $fread;
+
+                if($oFileSize == $json['originalsize']) {
+                    return $json;
+                }
             }
         }
 
         $ttf = new TTFontFile();
         $ttf->getMetrics($fontFile);
-        $arr_character_widths = $ttf->getCharWidths();
+
         $name = preg_replace('/[ ()]/', '', $ttf->getFullName());
 
-        $arr_descriptors = [
-            'Ascent'       => round($ttf->getAscent()),
-            'Descent'      => round($ttf->getDescent()),
-            'CapHeight'    => round($ttf->getCapHeight()),
-            'Flags'        => $ttf->getFlags(),
-            'FontBBox'     => '[' . round($ttf->getBbox()[0]) . ' ' . round($ttf->getBbox()[1]) . ' ' . round($ttf->getBbox()[2]) . ' ' . round($ttf->getBbox()[3]) . ']',
-            'ItalicAngle'  => $ttf->getItalicAngle(),
-            'StemV'        => round($ttf->getStemV()),
-            'MissingWidth' => round($ttf->getDefaultWidth()),
-        ];
         $flt_underline_pos = round($ttf->getUnderlinePosition());
         $flt_underline_thickness = round($ttf->getUnderlineThickness());
-        $type = self::FONT_TRUETYPE;
 
-        // Generate metrics .php file
+        $characterWidths = $ttf->getCharWidths();
+
+    // Generate metrics array
         $strMetricsData = [
             'name'                    => $name,
-            'type'                    => $type,
-            'arr_descriptors'         => $arr_descriptors,
+            'type'                    => self::FONT_TRUETYPE,
+            'desc'                    => [
+                'Ascent'       => round($ttf->getAscent()),
+                'Descent'      => round($ttf->getDescent()),
+                'CapHeight'    => round($ttf->getCapHeight()),
+                'Flags'        => $ttf->getFlags(),
+                'FontBBox'     => '[' . round($ttf->getBbox()[0]) . ' ' . round($ttf->getBbox()[1]) . ' ' . round($ttf->getBbox()[2]) . ' ' . round($ttf->getBbox()[3]) . ']',
+                'ItalicAngle'  => $ttf->getItalicAngle(),
+                'StemV'        => round($ttf->getStemV()),
+                'MissingWidth' => round($ttf->getDefaultWidth()),
+            ],
             'flt_underline_pos'       => $flt_underline_pos,
             'flt_underline_thickness' => $flt_underline_thickness,
             'ttffile'                 => str_replace(__DIR__ . "/", "", $metricFile),
             'originalsize'            => $oFileSize,
             'fontkey'                 => $fontKey,
+            'cw'                      => null,
         ];
 
-        if($this->use_cache) {
-            $cachePath = $this->getCachePath();
+        $cachePath = $this->getCachePath();
+        if($cachePath !== null) {
 
         // write metrics file
             $json = json_encode($strMetricsData);
@@ -1128,16 +1125,17 @@ class PDF
 
         // write char width file
             $fopen = fopen($charWidthFile, 'w');
-            fwrite($fopen, $arr_character_widths);
+            fwrite($fopen, $characterWidths);
             fclose($fopen);
 
         // unlink char width 127 file
-
-            $charWidth127file = $cachePath.$basePath.self::FILE_CHARACTER_WIDTH_127;
+            $charWidth127file = $cachePath.self::FILE_CHARACTER_WIDTH.$baseName.'.json';
             if(file_exists($charWidth127file)) {
-                @unlink($cacheWidth127file);
+                @unlink($charWidth127file);
             }
         }
+
+        $strMetricsData['cw'] = $characterWidths;
 
         unset($ttf);
 
@@ -1895,14 +1893,6 @@ class PDF
     }
 
     /**
-     * @return string
-     */
-    protected function getFontWritePath()
-    {
-        return $this->str_font_write_path;
-    }
-
-    /**
      *
      */
     protected function checkOutput()
@@ -2466,16 +2456,7 @@ class PDF
                 $this->NewObject();
                 $this->arr_font_files[$str_file]['n'] = $this->int_current_object;
                 $str_font = $this->readFontFile($this->getFontPath() . $str_file);
-                /*
-                $ptr_file = fopen($this->getFontPath() . $str_file, 'rb', 1);
-                if (!$ptr_file) {
-                    $this->Error('Font file not found');
-                }
-                while (!feof($ptr_file)) {
-                    $str_font .= fread($ptr_file, 8192);
-                }
-                fclose($ptr_file);
-                */
+
                 $bol_compressed_file = (substr($str_file, -2) == '.z');
                 if (!$bol_compressed_file && isset($arr_info['length2'])) {
                     $bol_header = (ord($str_font[0]) == 128);
@@ -2501,7 +2482,9 @@ class PDF
                 $this->Out('endobj');
             }
         }
+
         foreach ($this->arr_fonts as $str_key => $arr_font_data) {
+
             // Font objects
             //$this->fonts[$k]['n']=$this->n+1;
             $str_type = $arr_font_data['type'];
@@ -2691,48 +2674,45 @@ class PDF
 
     protected function PutTTFontWidths($font, $maxUni)
     {
-        $str_font_file = $font['unifilename'] . self::FILE_CHARACTER_WIDTH_127;
+        $cachePath = $this->getCachePath();
+        $cacheFile = $cachePath . self::FILE_CHARACTER_WIDTH.$font['filename'].'.json';
 
-        if (file_exists($str_font_file)) {
-            include($str_font_file);
-            $startcid = 128;
-        } else {
-            $rangeid = 0;
-            $range = array();
-            $prevcid = -2;
-            $prevwidth = -1;
-            $interval = false;
-            $startcid = 1;
+        $rangeid = 0;
+        $range = array();
+        $prevcid = -2;
+        $prevwidth = -1;
+        $interval = false;
+        $startcid = 1;
+
+        if($cachePath !== null && file_exists($cacheFile)) {
+            $fopen = fopen($cacheFile, 'r');
+            $fread = fread($fopen, filesize($cacheFile));
+            fclose($fopen);
+
+            $json = json_decode($fread, true);
+
+            if(json_last_error() !== JSON_ERROR_NONE) {
+                extract($json);
+                $startcid = 128;
+            }
         }
+
         $cwlen = $maxUni + 1;
         // for each character
         for ($cid = $startcid; $cid < $cwlen; $cid++) {
-            if ($cid == 128 && (!file_exists($str_font_file))) {
-                if (is_writable(dirname($this->getFontPath() . $this->str_unifont_path))) {
-                    $fh = fopen($str_font_file, "wb");
-
-                    $cw127 = [
-                        'rangeid'   => $rangeid,
-                        'prevcid'   => $prevcid,
-                        'prevwidth' => $prevwidth,
-                        'interval'  => (bool)$interval,
-                        'range'     => var_export($range, true),
-                    ];
-
-                    fwrite($fh, json_encode($cw127));
-                    fclose($fh);
-                }
-            }
             if ($font['cw'][$cid * 2] == "\00" && $font['cw'][$cid * 2 + 1] == "\00") {
                 continue;
             }
+
             $width = (ord($font['cw'][$cid * 2]) << 8) + ord($font['cw'][$cid * 2 + 1]);
             if ($width == 65535) {
                 $width = 0;
             }
+
             if ($cid > 255 && (!isset($font['subset'][$cid]) || !$font['subset'][$cid])) {
                 continue;
             }
+
             if (!isset($font['dw']) || (isset($font['dw']) && $width != $font['dw'])) {
                 if ($cid == ($prevcid + 1)) {
                     if ($width == $prevwidth) {
@@ -2769,6 +2749,23 @@ class PDF
                 $prevwidth = $width;
             }
         }
+
+    // write file
+        if ($cachePath !== null && !file_exists($cacheFile)) {
+            $fh = fopen($cacheFile, 'wb');
+
+            $cw127 = [
+                'rangeid'   => $rangeid,
+                'prevcid'   => $prevcid,
+                'prevwidth' => $prevwidth,
+                'interval'  => (bool)$interval,
+                'range'     => $range,
+            ];
+
+            fwrite($fh, json_encode($cw127));
+            fclose($fh);
+        }
+
         $prevk = -1;
         $nextk = -1;
         $prevint = false;
@@ -2804,6 +2801,7 @@ class PDF
                 $w .= ' ' . $k . ' [ ' . implode(' ', $ws) . ' ]' . "\n";
             }
         }
+
         $this->Out('/W [' . $w . ' ]');
     }
 
@@ -3085,11 +3083,11 @@ class PDF
     /**
      * With this method you can set the cache path
      *
-     * @param string $path The cache folder
+     * @param string $cachePath The cache folder
      *
      * @return string The newly set cache folder
      */
-    public function setCachePath(string $path = null): ?string {
+    public function setCachePath(string $cachePath = null): ?string {
         if(!file_exists($cachePath)) {
             @mkdir($cachePath, 0775, true);
         }
@@ -3100,14 +3098,30 @@ class PDF
 
         $this->cachePath = realpath($cachePath).'/';
 
-        return $path;
+        return $cachePath;
     }
 
     /**
-     * @return string The currently set cache folder
+     * Get the currently set cache folder
+     *
+     * @return string The cache folder, may be null
      */
     public function getCachePath(): ?string {
        return $this->cachePath;
+    }
+
+    /**
+     * Clear all cached files in the cache folder
+     *
+     */
+    public function clearCache() {
+        $cachePath = $this->getCachePath();
+        if($cachePath !== null) {
+            $cacheFiles = glob($cachePath.'*.*');
+            foreach($cacheFiles as $cacheFile) {
+                @unlink($cacheFile);
+            }
+        }
     }
 
     /**
