@@ -499,7 +499,6 @@ class PDF
             default:
                 $this->Error('Incorrect orientation: ' . $str_orientation);
                 break;
-
         }
 
         $this->str_current_orientation = $this->str_default_orientation;
@@ -3171,5 +3170,4 @@ class PDF
 
         return (int)count($lines) * $lineHeight;
     }
-
 }
