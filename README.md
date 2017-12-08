@@ -18,6 +18,30 @@ And run `composer update` or `composer install`.
 
 Or you can simply run the `composer` command, `composer require faimmedia/fpdf-utf8`.
 
+## Usage
+
+### Namespacing
+
+The namespacing has been changed to `FaimMedia\FPDF`.
+
+### Caching
+
+In this version you can set the cache folder yourself, so it will not put the cache files into the same directory as the font-files. Please note that if you do not set the cache folder, no caching is used and documents may be created a little bit slower.
+
+	use FaimMedia\FPDF\PDF;
+
+	$fpdf = new PDF();
+	$fpdf->setCache('/cache/');
+	$fpdf->AddPage();
+	$fpdf->AddFont('OpenSans', null, null, true);
+	$fpdf->SetFont('OpenSans');
+	$fpdf->Write('This is a test PDF with OpenSans as font');
+	$fpdf->Output(); 
+
+### Exception
+
+A custom exception class `FPDFException` has been created. For all exception error codes, please take a look at the `src/FPDF/Exception/FPDFException.php` file.
+
 ## About
 
 ### What is FPDF-UTF8?
