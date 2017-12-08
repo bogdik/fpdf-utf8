@@ -21,9 +21,8 @@ class PDF
 
     const FONT_TRUETYPE = 'TTF';
 
-    const FILE_FONT_METRICS = '-font-metrics.json';
-    const FILE_CHARACTER_WIDTH_DAT = '-character-widths.dat';
-    const FILE_CHARACTER_WIDTH_127 = '-character-width-127.json';
+    const FILE_FONT_METRICS = 'fm-';
+    const FILE_CHARACTER_WIDTH = 'cw-';
 
     /**
      * @var bool
