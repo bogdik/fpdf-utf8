@@ -690,15 +690,6 @@ class PDF {
     }
 
     /**
-     * @param $str_message
-     */
-    private function Error($str_message)
-    {
-        // Fatal error
-        throw new RuntimeException('FPDF Error: ' . $str_message);
-    }
-
-    /**
      * Inits the document
      */
     public function Open()
