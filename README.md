@@ -31,9 +31,10 @@ In this version you can set the cache folder yourself, so it will not put the ca
 	use FaimMedia\FPDF\PDF;
 
 	$fpdf = new PDF();
+	$fpdf->setFontPath('/font/unifont/');
 	$fpdf->setCache('/cache/');
 	$fpdf->AddPage();
-	$fpdf->AddFont('OpenSans', null, null, true);
+	$fpdf->AddFont('OpenSans');
 	$fpdf->SetFont('OpenSans');
 	$fpdf->Write('This is a test PDF with OpenSans as font');
 	$fpdf->Output(); 
