@@ -8,8 +8,7 @@ use RuntimeException;
  * Class PDF
  * @package tFPDF
  */
-class PDF
-{
+class PDF {
 
     const ORIENTATION_PORTRAIT = 'P';
     const ORIENTATION_LANDSCAPE = 'L';
