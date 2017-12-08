@@ -27,7 +27,7 @@
 	],
 	"autoload": {
 		"psr-4": {
-			"tFPDF\\": "src/tFPDF/"
+			"FaimMedia\\FPDF\\": "src/FPDF/"
 		}
 	},
 	"scripts": {
