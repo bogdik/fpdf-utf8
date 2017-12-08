@@ -1,6 +1,6 @@
 <?php
 
-namespace tFPDF;
+namespace FaimMedia\FPDF;
 
 class TTFontFile
 {

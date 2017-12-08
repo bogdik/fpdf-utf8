@@ -6,7 +6,7 @@
  * @copyright Venditan Limited 2016
  */
 
-namespace tFPDF;
+namespace FaimMedia\FPDF;
 
 
 class PDFBarcode extends PDF
