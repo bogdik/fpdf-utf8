@@ -8,11 +8,21 @@
  * @copyright FaimMedia B.V. 2017
  */
 
+use FaimMedia\FPDF\PDF;
+
 define('ROOT_PATH', realpath(__DIR__.'/..').'/');
 
 require_once ROOT_PATH.'/vendor/autoload.php';
 
-$fpdf = new \tFPDF\PDF();
+$fpdf = new PDF();
+$fpdf->setCachePath(ROOT_PATH.'cache/font/');
+
+$isCache = true;
+if(isset($_GET['clear'])) {
+	$fpdf->clearCache();
+	$isCache = false;
+}
+
 $fpdf->AddPage();
 
 $fontFolder = ROOT_PATH.'src/font/unifont/';
@@ -34,9 +44,17 @@ foreach($fontFiles as $fontFile) {
 }
 
 if(isset($_GET['output'])) {
-	header('Content-Type: application/pdf; Charset=UTF-8');
+	$content = $fpdf->output();
 
-	echo $fpdf->output();
+	if(error_get_last() !== null) {
+		echo print_r(error_get_last(), true);
+		die;
+	}
+
+	header('Content-Type: application/pdf; Charset=UTF-8');
+	header('X-Parse-Time: '. (string)(microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) . ' sec');
+	header('X-Cache: '. (int)$isCache);
+	echo $content;
 } else {
 	$str_file = sys_get_temp_dir() . '/tfpdf_unicode_test.pdf';
 	file_put_contents($str_file, $fpdf->output());
