@@ -30,25 +30,28 @@ class FPDFException extends Exception {
 // Invalid font file
 	const INVALID_FONT_FILE = -8;
 
+// Invalid font specified
+	const INVALID_FONT_PATH = -9;
+
 // Invalid image was specified, not existing or not readable
-	const INVALID_IMAGE = -9;
+	const INVALID_IMAGE = -10;
 
 // Unsupported image was specified
-	const UNSUPPORTED_IMAGE = -10;
+	const UNSUPPORTED_IMAGE = -11;
 
 // Image not writable, probally temp directory not writable
-	const IMAGE_NOT_WRITABLE = -11;
+	const IMAGE_NOT_WRITABLE = -12;
 
 // Headers have already been send
-	const HEADER_ALREADY_SENT = -12;
+	const HEADER_ALREADY_SENT = -13;
 
 // Cache folder is invalid or not writable
-	const INVALID_CACHE_FOLDER = -13;
+	const INVALID_CACHE_FOLDER = -14;
 
 // A required PHP extension is not available
-	const EXTENSION_NOT_AVAILABLE = -14;
+	const EXTENSION_NOT_AVAILABLE = -15;
 
 // Stream could not be readed (completely)
-	const INVALID_STREAM = -15;
+	const INVALID_STREAM = -16;
 
 }

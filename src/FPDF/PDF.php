@@ -433,14 +433,6 @@ class PDF {
     protected $str_pdf_version = '1.3';
 
     /**
-     * The unifont directory
-     *
-     * @var string
-     */
-    protected $str_unifont_path = 'unifont/';
-
-
-    /**
      * The font metric cache directory, if null no cache will be used
      *
      * @var string
@@ -454,9 +446,9 @@ class PDF {
      * @param string $str_units
      * @param string $str_size
      */
-    public function __construct($str_orientation = 'P', $str_units = 'mm', $str_size = 'A4')
-    {
-        $this->str_font_path = __DIR__ . '/../font/';
+    public function __construct($str_orientation = 'P', $str_units = 'mm', $str_size = 'A4') {
+
+        $this->setFontPath(__DIR__ . '/../font/unicode/');
 
         // Scale factor
         switch ($str_units) {
@@ -975,61 +967,61 @@ class PDF {
     }
 
     /**
-     * @param $str_family
-     * @param string $str_style
-     * @param string $str_file
-     * @param bool $bol_unicode
+     * Add a unicode font to the document
+     *
+     * @param string $fontFamily The Font-Family name to be used in setFont method
+     * @param string $fontStyle Font-Style of the font to be used in setFont method (B, I, U)
+     * @param string $fontFile The relative font filename used with the set font path
      */
-    public function AddFont($str_family, $str_style = '', $str_file = '', $bol_unicode = false)
-    {
-        // Add a TrueType, OpenType or Type1 font
-        $str_family = strtolower($str_family);
-        $str_style = strtoupper($str_style);
-        if ($str_style === 'IB') {
-            $str_style = 'BI';
+    public function AddFont(string $fontFamily, string $fontStyle = '', string $fontFile = '') {
+
+    // Add a TrueType, OpenType or Type1 font
+        $fontFamily = strtolower($fontFamily);
+        $fontStyle = strtoupper($fontStyle);
+
+        if ($fontStyle == 'IB') {
+            $fontStyle = 'BI';
         }
-        if ($str_file === '') {
-            $str_file = str_replace(' ', '', $str_family) . strtolower($str_style);
-            $str_file .= ($bol_unicode) ? '.ttf' : '.php';
+        if ($fontFile == '') {
+            $fontFile = str_replace(' ', '', $fontFamily) . strtolower($fontStyle);
+            $fontFile .= '.ttf';
         }
 
-        $fontKey = $str_family . $str_style;
+        $fontExtension = pathinfo($fontFile, PATHINFO_EXTENSION);
+        $isUnicode = (strtolower($fontExtension) != 'php');
+
+        $fontKey = $fontFamily . $fontStyle;
         if (isset($this->arr_fonts[$fontKey])) {
             return;
         }
 
-        if ($bol_unicode) {
-            if (defined("_SYSTEM_TTFONTS") && file_exists(_SYSTEM_TTFONTS . $str_file)) {
-                $str_ttf_filename = _SYSTEM_TTFONTS . $str_file;
-            } else {
-                $str_ttf_filename = $this->getFontPath() . $this->str_unifont_path . $str_file;
-            }
+        if ($isUnicode) {
+            $fontFile = $this->getFontPath() . $fontFile;
 
-            $fontMetrics = $this->getFontMetricFiles($str_ttf_filename, $fontKey);
-            //extract($fontMetrics, EXTR_SKIP);
+            $fontMetrics = $this->getFontMetricFiles($fontFile, $fontKey);
 
             $int_font_count = count($this->arr_fonts) + 1;
             $arr_numbers = range(0, (!empty($this->str_alias_number_pages)) ? 57 : 32);
 
             $this->arr_fonts[$fontKey] = array_merge($fontMetrics, [
                 'i'           => $int_font_count,
-                'ttffile'     => $str_ttf_filename,
+                'ttffile'     => $fontFile,
                 'subset'      => $arr_numbers,
-                'filename'    => pathinfo($str_file, PATHINFO_FILENAME),
+                'filename'    => pathinfo($fontFile, PATHINFO_FILENAME),
             ]);
 
             $this->arr_font_files[$fontKey] = [
                 'length1' => $fontMetrics['originalsize'],
                 'type'    => self::FONT_TRUETYPE,
-                'ttffile' => $str_ttf_filename,
+                'ttffile' => $fontFile,
             ];
-            $this->arr_font_files[$str_file] = [
+            $this->arr_font_files[$fontFile] = [
                 'type' => self::FONT_TRUETYPE
             ];
 
             unset($fontMetrics);
         } else {
-            $arr_info = $this->LoadFont($str_file);
+            $arr_info = $this->LoadFont($fontFile);
             $arr_info['i'] = count($this->arr_fonts) + 1;
             if (!empty($arr_info['diff'])) {
                 // Search existing encodings
@@ -1891,6 +1883,22 @@ class PDF {
         }
 
         return $this->str_buffer;
+    }
+
+    /**
+     * Set the font directory where font should be loaded front
+     *
+     * @param $fontPath The font directory
+     */
+
+    public function setFontPath(string $fontPath): string {
+        if(!file_exists($fontPath) || !is_dir($fontPath)) {
+            throw new FPDFException('Font path does not exist', FPDFException::INVALID_FONT_PATH);
+        }
+
+        $this->str_font_path = realpath($fontPath).'/';
+
+        return $this->str_font_path;
     }
 
     /**
