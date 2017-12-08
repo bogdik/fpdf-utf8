@@ -3101,6 +3101,11 @@ class PDF
 
     /**
      * @param $str_path
+     * With this method you can set the cache path
+     *
+     * @param string $path The cache folder
+     *
+     * @return string The newly set cache folder
      */
     public function configureFontWritePath($str_path)
     {
@@ -3108,11 +3113,25 @@ class PDF
             if (!mkdir($this->str_font_write_path . $str_path)) {
                 $this->Error("Unable to create unifont directory in path {$this->str_font_write_path}");
             }
+    public function setCachePath(string $path = null): ?string {
+        if(!file_exists($cachePath)) {
+            @mkdir($cachePath, 0775, true);
         }
+
+        if(!file_exists($cachePath) || !is_dir($cachePath) || !is_writable($cachePath)) {
+            throw new RuntimeException('Could not write to cache folder: '.$cachePath);
+        }
+
+        $this->cachePath = realpath($cachePath).'/';
+
+        return $path;
     }
 
     /**
+     * @return string The currently set cache folder
      */
+    public function getCachePath(): ?string {
+       return $this->cachePath;
     }
 
 
