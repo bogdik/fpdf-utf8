@@ -584,22 +584,36 @@ class PDF {
     }
 
     /**
-     * @param $str_zoom
-     * @param string $str_layout
+     * Set display mode and zoom view
+     *
+     * @param string $zoomMode Set zoom mode: default, fullpage, fullwidth or real
+     * @param string $layoutMode Set layout mode: default, single, continuous or two
      */
-    public function SetDisplayMode($str_zoom, $str_layout = 'default')
-    {
-        // Set display mode in viewer
-        if ($str_zoom == 'fullpage' || $str_zoom == 'fullwidth' || $str_zoom == 'real' || $str_zoom == 'default' || !is_string($str_zoom)) {
-            $this->mix_zoom_mode = $str_zoom;
-        } else {
-            $this->Error('Incorrect zoom display mode: ' . $str_zoom);
+    public function SetDisplayMode(string $zoomMode = null, string $layoutMode = null) {
+
+    // Validate zoom mode
+        $zoomModes = ['default', 'fullpage', 'fullwidth', 'real'];
+        if($zoomMode === null) {
+            $zoomMode = $zoomModes[0];
         }
-        if ($str_layout == 'single' || $str_layout == 'continuous' || $str_layout == 'two' || $str_layout == 'default') {
-            $this->str_layout_mode = $str_layout;
-        } else {
-            $this->Error('Incorrect layout display mode: ' . $str_layout);
+
+        if(!in_array($zoomMode, $zoomModes)) {
+            throw new FPDFException('Invalid zoom mode specified: `'.$zoomMode.'`', FPDFException::INVALID_ZOOM_MODE);
         }
+
+    // Valid layout mode
+        $layoutModes = ['default', 'single', 'continuous', 'two'];
+        if($layoutMode === null) {
+            $layoutMode = $layoutModes[0];
+        }
+
+        if(!in_array($layoutMode, $layoutModes)) {
+            throw new FPDFException('Invalid layout mode specified: `'.$layoutMode.'`', FPDFException::INVALID_LAYOUT_MODE);
+        }
+
+    // Set zoom and layout modes
+        $this->mix_zoom_mode = $zoomMode;
+        $this->str_layout_mode = $layoutMode;
     }
 
     /**
