@@ -3112,26 +3112,13 @@ class PDF
     }
 
     /**
-     * @param $bool
      */
-
-    public function setCache($bool = true)
-    {
-        $this->use_cache = $bool;
     }
 
-    public function getCachePath() {
-        $cachePath = __DIR__.'/'.$this->str_cache_path;
 
-        if(!file_exists($cachePath)) {
-            @mkdir($cachePath, 0775, true);
+
         }
 
-        if(!file_exists($cachePath) || !is_dir($cachePath) || !is_writable($cachePath)) {
-            throw new RuntimeException('Could not write to cache folder: '.$cachePath);
-        }
-
-        return realpath($cachePath).'/';
     }
 
 }
