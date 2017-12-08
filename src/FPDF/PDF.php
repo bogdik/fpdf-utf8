@@ -2,7 +2,7 @@
 
 namespace FaimMedia\FPDF;
 
-use RuntimeException;
+use FaimMedia\FPDF\Exception\FPDFException;
 
 /**
  * Class PDF
@@ -471,7 +471,7 @@ class PDF {
                 $this->flt_scale_factor = 72;
                 break;
             default:
-                throw new RuntimeException('Invalid unit specified: ' . $str_units);
+                throw new FPDFException('Invalid unit specified: ' . $str_units, FPDFException::INVALID_UNIT);
         }
 
         $str_size = $this->getPageSize($str_size);
@@ -496,7 +496,7 @@ class PDF {
                 break;
 
             default:
-                $this->Error('Incorrect orientation: ' . $str_orientation);
+                throw new FPDFException('Invalid orientation: ' . $str_orientation, FPDFException::INVALID_ORIENTATION);
                 break;
         }
 
@@ -1188,16 +1188,16 @@ class PDF {
             if ($str_family == 'arial') {
                 $str_family = 'helvetica';
             }
-            if (in_array($str_family, $this->arr_core_fonts)) {
-                if ($str_family == 'symbol' || $str_family == 'zapfdingbats') {
-                    $str_style = '';
-                }
-                $str_font_key = $str_family . $str_style;
-                if (!isset($this->arr_fonts[$str_font_key])) {
-                    $this->AddFont($str_family, $str_style);
-                }
-            } else {
-                $this->Error('Undefined font: ' . $str_family . ' ' . $str_style);
+            if (!in_array($str_family, $this->arr_core_fonts)) {
+                throw new FPDFException('Undefined font: '.$str_family.' '.$str_style, FPDFException::UNDEFINED_FONT);
+            }
+
+            if ($str_family == 'symbol' || $str_family == 'zapfdingbats') {
+                $str_style = '';
+            }
+            $str_font_key = $str_family . $str_style;
+            if (!isset($this->arr_fonts[$str_font_key])) {
+                $this->AddFont($str_family, $str_style);
             }
         }
         // Select it
@@ -1763,7 +1763,7 @@ class PDF {
             if ($str_type == '') {
                 $int_position = strrpos($str_file, '.');
                 if (!$int_position) {
-                    $this->Error('Image file has no extension and no type was specified: ' . $str_file);
+                    throw new FPDFException('Image file has no extension and no type was specified: ' . $str_file, FPDFException::INVALID_IMAGE);
                 }
                 $str_type = substr($str_file, $int_position + 1);
             }
@@ -1773,7 +1773,7 @@ class PDF {
             }
             $str_method = '_parse' . $str_type;
             if (!method_exists($this, $str_method)) {
-                $this->Error('Unsupported image type: ' . $str_type);
+                throw new FPDFException('Unsupported image type: `'.$str_type.'`', FPDFException::UNSUPPORTED_IMAGE);
             }
             $arr_image_info = $this->$str_method($str_file);
             $arr_image_info['i'] = count($this->arr_images) + 1;
@@ -1908,18 +1908,19 @@ class PDF {
     {
         if (PHP_SAPI !== 'cli') {
             if (headers_sent($str_file, $int_line)) {
-                throw new RuntimeException("Some data has already been output, can't send PDF file (output started at $str_file:$int_line)");
+                throw new FPDFException("Some data has already been output, can't send PDF file, output started at ".$str_file.":".$int_line, FPDFException::HEADER_ALREADY_SENT);
             }
         }
 
         if (ob_get_length()) {
-            // The output buffer is not empty
-            if (preg_match('/^(\xEF\xBB\xBF)?\s*$/', ob_get_contents())) {
-                // It contains only a UTF-8 BOM and/or whitespace, let's clean it
-                ob_clean();
-            } else {
-                throw new RuntimeException('Some data has already been output, can\'t send PDF file');
+
+        // The output buffer is not empty
+            if (!preg_match('/^(\xEF\xBB\xBF)?\s*$/', ob_get_contents())) {
+                throw new FPDFException('Some data has already been output, can\'t send PDF file', FPDFException::HEADER_ALREADY_SENT);
             }
+
+        // It contains only a UTF-8 BOM and/or whitespace, let's clean it
+            ob_clean();
         }
     }
 
@@ -1932,7 +1933,7 @@ class PDF {
         if (is_string($mix_size)) {
             $mix_size = strtolower($mix_size);
             if (!isset($this->arr_standard_page_sizes[$mix_size])) {
-                $this->Error('Unknown page size: ' . $mix_size);
+                throw new FPDFException('Invalid page size: ' . $mix_size, FPDFException::INVALID_PAGE_SIZE);
             }
             $a = $this->arr_standard_page_sizes[$mix_size];
             return array($a[0] / $this->flt_scale_factor, $a[1] / $this->flt_scale_factor);
@@ -2006,7 +2007,7 @@ class PDF {
         include($this->str_font_path . $str_font);
         $arr_defined_vars = get_defined_vars();
         if (!isset($arr_defined_vars['name'])) {
-            $this->Error('Could not include font definition file');
+            throw new FPDFException('Could not include font definition file', FPDFException::INVALID_FONT_FILE);
         }
         return $arr_defined_vars;
     }
@@ -2086,10 +2087,10 @@ class PDF {
         // Extract info from a JPEG file
         $arr_size_data = getimagesize($str_file);
         if (!$arr_size_data) {
-            $this->Error('Missing or incorrect image file: ' . $str_file);
+            throw new FPDFException('Missing or incorrect image file: ' . $str_file, FPDFException::INVALID_IMAGE);
         }
         if ($arr_size_data[2] != 2) {
-            $this->Error('Not a JPEG file: ' . $str_file);
+            throw new FPDFException('Not a JPEG file: ' . $str_file, FPDFException::UNSUPPORTED_IMAGE);
         }
         if (!isset($arr_size_data['channels']) || $arr_size_data['channels'] == 3) {
             $str_color_space = 'DeviceRGB';
@@ -2112,7 +2113,7 @@ class PDF {
         // Extract info from a PNG file
         $ptr_file = fopen($str_file, 'rb');
         if (!$ptr_file) {
-            $this->Error('Can\'t open image file: ' . $str_file);
+            throw new FPDFException('Can\'t open image file: ' . $str_file, FPDFException::INVALID_IMAGE);
         }
         $arr_info = $this->_parsepngstream($ptr_file, $str_file);
         fclose($ptr_file);
@@ -2128,19 +2129,19 @@ class PDF {
     {
         // Check signature
         if ($this->_readstream($ptr_file, 8) != chr(137) . 'PNG' . chr(13) . chr(10) . chr(26) . chr(10)) {
-            $this->Error('Not a PNG file: ' . $str_file);
+            throw new FPDFException('Not a PNG file: ' . $str_file, FPDFException::UNSUPPORTED_IMAGE);
         }
 
         // Read header chunk
         $this->_readstream($ptr_file, 4);
         if ($this->_readstream($ptr_file, 4) != 'IHDR') {
-            $this->Error('Incorrect PNG file: ' . $str_file);
+            throw new FPDFException('Incorrect PNG file: ' . $str_file, FPDFException::UNSUPPORTED_IMAGE);
         }
         $int_width = $this->_readint($ptr_file);
         $int_height = $this->_readint($ptr_file);
         $int_bits_per_component = ord($this->_readstream($ptr_file, 1));
         if ($int_bits_per_component > 8) {
-            $this->Error('16-bit depth not supported: ' . $str_file);
+            throw new FPDFException('16-bit depth not supported: ' . $str_file, FPDFException::UNSUPPORTED_IMAGE);
         }
         $int_color_channels = ord($this->_readstream($ptr_file, 1));
         if ($int_color_channels == 0 || $int_color_channels == 4) {
@@ -2150,16 +2151,16 @@ class PDF {
         } elseif ($int_color_channels == 3) {
             $str_color_space = 'Indexed';
         } else {
-            $this->Error('Unknown color type: ' . $str_file);
+            throw new FPDFException('Unknown color type: ' . $str_file, FPDFException::UNSUPPORTED_IMAGE);
         }
         if (ord($this->_readstream($ptr_file, 1)) != 0) {
-            $this->Error('Unknown compression method: ' . $str_file);
+            throw new FPDFException('Unknown compression method: ' . $str_file, FPDFException::UNSUPPORTED_IMAGE);
         }
         if (ord($this->_readstream($ptr_file, 1)) != 0) {
-            $this->Error('Unknown filter method: ' . $str_file);
+            throw new FPDFException('Unknown filter method: ' . $str_file, FPDFException::UNSUPPORTED_IMAGE);
         }
         if (ord($this->_readstream($ptr_file, 1)) != 0) {
-            $this->Error('Interlacing not supported: ' . $str_file);
+            throw new FPDFException('Interlacing not supported: ' . $str_file, FPDFException::UNSUPPORTED_IMAGE);
         }
         $this->_readstream($ptr_file, 4);
         $str_predictor = '/Predictor 15 /Colors ' . ($str_color_space == 'DeviceRGB' ? 3 : 1) . ' /BitsPerComponent ' . $int_bits_per_component . ' /Columns ' . $int_width;
@@ -2201,7 +2202,7 @@ class PDF {
         } while ($int_line);
 
         if ($str_color_space == 'Indexed' && empty($str_palette)) {
-            $this->Error('Missing palette in ' . $str_file);
+            throw new FPDFException('Missing palette in ' . $str_file, FPDFException::UNSUPPORTED_IMAGE);
         }
         $arr_info = array(
             'w' => $int_width,
@@ -2216,7 +2217,7 @@ class PDF {
         if ($int_color_channels >= 4) {
             // Extract alpha channel
             if (!function_exists('gzuncompress')) {
-                $this->Error('Zlib not available, can\'t handle alpha channel: ' . $str_file);
+                throw new FPDFException('Zlib not available, can\'t handle alpha channel: ' . $str_file, FPDFException::EXTENSION_NOT_AVAILABLE);
             }
             $str_data = gzuncompress($str_data);
             $str_color = '';
@@ -2267,13 +2268,13 @@ class PDF {
         while ($int_bytes > 0 && !feof($ptr_file)) {
             $str_data = fread($ptr_file, $int_bytes);
             if ($str_data === false) {
-                $this->Error('Error while reading stream');
+                throw new FPDFException('Error while reading stream', FPDFException::INVALID_STREAM);
             }
             $int_bytes -= strlen($str_data);
             $str_result .= $str_data;
         }
         if ($int_bytes > 0) {
-            $this->Error('Unexpected end of stream');
+            throw new FPDFException('Unexpected end of stream', FPDFException::INVALID_STREAM);
         }
         return $str_result;
     }
@@ -2297,14 +2298,14 @@ class PDF {
     {
         // Extract info from a GIF file (via PNG conversion)
         if (!function_exists('imagepng')) {
-            $this->Error('GD extension is required for GIF support');
+            throw new FPDFException('GD extension is required for GIF support', FPDFException::EXTENSION_NOT_AVAILABLE);
         }
         if (!function_exists('imagecreatefromgif')) {
-            $this->Error('GD has no GIF read support');
+            throw new FPDFException('GD has no GIF read support', FPDFException::EXTENSION_NOT_AVAILABLE);
         }
         $obj_image = imagecreatefromgif($str_file);
         if (!$obj_image) {
-            $this->Error('Missing or incorrect image file: ' . $str_file);
+            throw new FPDFException('Missing or incorrect image file: ' . $str_file, FPDFException::INVALID_IMAGE);
         }
         imageinterlace($obj_image, 0);
         $ptr_file = @fopen('php://temp', 'rb+');
@@ -2322,10 +2323,10 @@ class PDF {
             // Use temporary file
             $str_tmp = tempnam('.', 'gif');
             if (!$str_tmp) {
-                $this->Error('Unable to create a temporary file');
+                throw new FPDFException('Unable to create a temporary file', FPDFException::IMAGE_NOT_WRITABLE);
             }
             if (!imagepng($obj_image, $str_tmp)) {
-                $this->Error('Error while saving to temporary file');
+                throw new FPDFException('Error while saving to temporary file', FPDFException::IMAGE_NOT_WRITABLE);
             }
             imagedestroy($obj_image);
             $arr_info = $this->_parsepng($str_tmp);
@@ -2673,7 +2674,7 @@ class PDF {
                     $this->arr_fonts[$str_key]['n'] = $this->int_current_object + 1;
                     $str_method = '_put' . strtolower($str_type);
                     if (!method_exists($this, $str_method)) {
-                        $this->Error('Unsupported font type: ' . $str_type);
+                        throw new FPDFException('Unsupported font type: ' . $str_type, FPDFException::UNSUPPORTED_FONT);
                     }
                     $this->$str_method($arr_font_data);
                 }
@@ -3102,7 +3103,7 @@ class PDF {
         }
 
         if(!file_exists($cachePath) || !is_dir($cachePath) || !is_writable($cachePath)) {
-            throw new RuntimeException('Could not write to cache folder: '.$cachePath);
+            throw new FPDFException('Could not write to cache folder: '.$cachePath, FPDFException::INVALID_CACHE_FOLDER);
         }
 
         $this->cachePath = realpath($cachePath).'/';
