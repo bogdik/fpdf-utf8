@@ -3111,10 +3111,52 @@ class PDF
        return $this->cachePath;
     }
 
+    /**
+     * Calculates the expected line height for a multi cell,
+     *      useful if you want to know how much space a cell is going to use
+     *
+     * @param string $text The text to calculate the line height from
+     * @param int $cellWidth The width of the multicell
+     * @param int $lineHeight The line height of the multicell
+     *
+     * @return int The calculated line height
+     */
+    public function calculateHeight(string $text, int $cellWidth = 80, int $lineHeight = 3): int {
+        $explode = explode("\r", $text);
 
+        array_walk($explode, 'trim');
 
+        $lines = [];
+        foreach($explode as $split) {
+            $sub = $split;
+            $char = 1;
+
+            while($char <= strlen($sub)) {
+                $substr = substr($sub, 0, $char);
+
+                if($this->getStringWidth($substr) >= $cellWidth - 1) {
+                    $pos = strrpos($substr, " ");
+
+                    $lines[] = substr($sub, 0, ($pos !== FALSE ? $pos : $char)).($pos === FALSE ? '-' : '');
+
+                    if($pos !== FALSE) { //if $pos returns FALSE, substr has no whitespace, so split word on current position
+                        $char = $pos + 1;
+                        $len = $char;
+                    }
+
+                    $sub = ltrim(substr($sub, $char));
+                    $char = 0;
+                }
+
+                $char++;
+            }
+
+            if(!empty($sub)) {
+                $lines[] = $sub;
+            }
         }
 
+        return (int)count($lines) * $lineHeight;
     }
 
 }
