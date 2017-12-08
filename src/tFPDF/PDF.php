@@ -212,13 +212,6 @@ class PDF
     protected $str_font_path = '';
 
     /**
-     * The path that we use to write the fonts to
-     *
-     * @var string
-     */
-    protected $str_font_write_path;
-
-    /**
      * Array of core font names
      *
      * @var array
@@ -448,19 +441,13 @@ class PDF
      */
     protected $str_unifont_path = 'unifont/';
 
-    /**
-     * Boolean to use font metric cache files or not
-     *
-     * @var bool
-     */
-    protected $use_cache = true;
 
     /**
-     * The font metric cache directory
+     * The font metric cache directory, if null no cache will be used
      *
      * @var string
      */
-    protected $str_cache_path = '../../cache/font/';
+    protected $cachePath = null;
 
 
     /**
@@ -472,9 +459,6 @@ class PDF
     public function __construct($str_orientation = 'P', $str_units = 'mm', $str_size = 'A4')
     {
         $this->str_font_path = __DIR__ . '/../font/';
-        $this->str_font_write_path = $this->str_font_path;
-
-        $this->configureFontWritePath($this->str_unifont_path);
 
         // Scale factor
         switch ($str_units) {
@@ -3100,19 +3084,12 @@ class PDF
     }
 
     /**
-     * @param $str_path
      * With this method you can set the cache path
      *
      * @param string $path The cache folder
      *
      * @return string The newly set cache folder
      */
-    public function configureFontWritePath($str_path)
-    {
-        if (!is_dir($this->str_font_write_path . $str_path)) {
-            if (!mkdir($this->str_font_write_path . $str_path)) {
-                $this->Error("Unable to create unifont directory in path {$this->str_font_write_path}");
-            }
     public function setCachePath(string $path = null): ?string {
         if(!file_exists($cachePath)) {
             @mkdir($cachePath, 0775, true);
