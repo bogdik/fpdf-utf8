@@ -4,7 +4,7 @@
 	"keywords": ["pdf", "utf-8", "fpdf"],
 	"homepage": "http://github.com/FaimMedia/tfpdf",
 	"type": "library",
-	"license": "LGPL",
+	"license": "LGPL-3.0-or-later",
 	"authors": [
 		{
 			"name": "David Wilcock",
