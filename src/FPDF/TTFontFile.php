@@ -1,6 +1,6 @@
 <?php
 
-namespace FaimMedia\FPDF;
+namespace bogdik\FPDF;
 
 class TTFontFile
 {

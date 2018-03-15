@@ -27,7 +27,7 @@
 	],
 	"autoload": {
 		"psr-4": {
-			"FaimMedia\\FPDF\\": "src/FPDF/"
+			"bogdik\\FPDF\\": "src/FPDF/"
 		}
 	},
 	"scripts": {

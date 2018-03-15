@@ -1,6 +1,6 @@
 <?php
 
-namespace FaimMedia\FPDF\Exception;
+namespace bogdik\FPDF\Exception;
 
 use Exception;
 

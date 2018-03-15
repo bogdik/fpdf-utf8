@@ -1,8 +1,8 @@
 <?php
 
-namespace FaimMedia\FPDF;
+namespace bogdik\FPDF;
 
-use FaimMedia\FPDF\Exception\FPDFException;
+use bogdik\FPDF\Exception\FPDFException;
 
 /**
  * Class PDF

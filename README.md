@@ -16,19 +16,19 @@ You can install this library by editing (or creating) your `composer.json`:
 
 And run `composer update` or `composer install`.
 
-Or you can simply run the `composer` command, `composer require faimmedia/fpdf-utf8`.
+Or you can simply run the `composer` command, `composer require bogdik/yii2-fpdf-utf8`.
 
 ## Usage
 
 ### Namespacing
 
-The namespacing has been changed to `FaimMedia\FPDF`.
+The namespacing has been changed to `bogdik\FPDF`.
 
 ### Caching
 
 In this version you can set the cache folder yourself, so it will not put the cache files into the same directory as the font-files. Please note that if you do not set the cache folder, no caching is used and documents may be created a little bit slower.
 
-	use FaimMedia\FPDF\PDF;
+	use bogdik\FPDF\PDF;
 
 	$fpdf = new PDF();
 	$fpdf->setFontPath('/font/unifont/');
