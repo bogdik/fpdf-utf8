@@ -1,8 +1,8 @@
 {
-	"name": "faimmedia/fpdf-utf8",
+	"name": "bogdik/fpdf-utf8",
 	"description": "tfpdf",
 	"keywords": ["pdf", "utf-8", "fpdf"],
-	"homepage": "http://github.com/FaimMedia/tfpdf",
+	"homepage": "http://github.com/bogdik/yii2-fpdf-utf8",
 	"type": "library",
 	"license": "LGPL-3.0-or-later",
 	"authors": [
